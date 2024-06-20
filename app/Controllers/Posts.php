@@ -70,6 +70,15 @@ class Posts extends ResourceController
             'body' => [
                 'rules' => 'required',
                 'errors' => ['required' => 'Masukkan detail post']
+            ],
+            'image' => [
+                'rules' => 'uploaded[image]|max_size[image,1024]|is_image[image]|mime_in[image,image/jpg,image/jpeg,image/png]',
+                'errors' => [
+                    'uploaded' => 'Wajib upload gambar',
+                    'max_size' => 'Ukuran gambar terlalu besar',
+                    'is_image' => 'File bukan gambar',
+                    'mime_in' => 'File bukan gambar'
+                ]
             ]
         ]);
         if (!$validation) {
@@ -77,9 +86,15 @@ class Posts extends ResourceController
                 'validation' => $this->validator
             ]);
         } else {
+            $uploadedImage = $this->request->getFile('image');
+            $imageName = $uploadedImage->getRandomName();
+            $uploadedImage->move('img', $imageName);
+
             $data = [
+
                 'title' => $this->request->getPost('title'),
                 'body'  => $this->request->getPost('body'),
+                'image' => $imageName
             ];
 
             $this->postModel->save($data);
@@ -97,15 +112,14 @@ class Posts extends ResourceController
      *
      * @return ResponseInterface
      */
-    public function edit($id = null, $validaton = null)
+    public function edit($id = null)
     {
         $post = $this->postModel->getPost(($id));
         if (empty($post)) {
             throw new \CodeIgniter\Exceptions\PageNotFoundException('Post not found');
         }
         return view('posts/edit', [
-            'post' => $post,
-            'validation' => $validaton
+            'post' => $post
         ]);
     }
 
@@ -128,6 +142,14 @@ class Posts extends ResourceController
             'body' => [
                 'rules' => 'required',
                 'errors' => ['required' => 'Masukkan detail post']
+            ],
+            'image' => [
+                'rules' => 'max_size[image,1024]|is_image[image]|mime_in[image,image/jpg,image/jpeg,image/png]',
+                'errors' => [
+                    'max_size' => 'Ukuran gambar terlalu besar',
+                    'is_image' => 'File bukan gambar',
+                    'mime_in' => 'File bukan gambar'
+                ]
             ]
         ]);
         if (!$validation) {
@@ -141,10 +163,20 @@ class Posts extends ResourceController
                 'validation' => $this->validator
             ]);
         } else {
+            $uploadedImage = $this->request->getFile('image');
+            if ($uploadedImage->getError() == 4) {
+                $imageName = $this->request->getVar('oldImage');
+            } else {
+                $imageName = $uploadedImage->getRandomName();
+                $uploadedImage->move('img', $imageName);
+                unlink('img/' . $this->request->getVar('oldImage'));
+            }
+
             $data = [
                 'id' => $id,
                 'title' => $this->request->getPost('title'),
                 'body'  => $this->request->getPost('body'),
+                'image' => $imageName
             ];
 
             $this->postModel->save($data);
@@ -164,6 +196,10 @@ class Posts extends ResourceController
      */
     public function delete($id = null)
     {
+        $post = $this->postModel->getPost(($id));
+
+        unlink('img/' . $post['image']);
+
         $this->postModel->delete($id);
         //flash message
         session()->setFlashdata('message', 'Post Berhasil Dihapus');

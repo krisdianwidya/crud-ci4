@@ -9,7 +9,7 @@ class Post extends Model
     protected $table = 'posts';
     protected $primaryKey = 'id';
     protected $useSoftDeletes = true;
-    protected $allowedFields = ['title', 'body'];
+    protected $allowedFields = ['title', 'body', 'image'];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
