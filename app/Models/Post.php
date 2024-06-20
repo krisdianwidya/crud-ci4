@@ -14,4 +14,10 @@ class Post extends Model
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
     protected $deletedField = 'deleted_at';
+
+    public function getPost($id = null)
+    {
+        $post = $this->find($id);
+        return $post;
+    }
 }
